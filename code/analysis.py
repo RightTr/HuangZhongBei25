@@ -126,6 +126,39 @@ plt.savefig(f"{plots_dir}/就业状态分布.png", dpi=300)
 plt.close()
 
 
+# ========= 图5,6：失业时间段分析 =========
+# 将 '失业时间' 列转换为日期格式
+data['失业时间'] = pd.to_datetime(data['c_ajc090'], errors='coerce')
+
+# 按年分组统计失业人数
+data['失业年份'] = data['失业时间'].dt.year
+
+# 过滤掉没有失业时间的数据
+unemployed_data = data[data['失业时间'].notna()]
+
+# 绘制失业人数按年分布图
+plt.figure(figsize=(8, 5))
+sns.countplot(x='失业年份', data=unemployed_data, palette='Set2')
+plt.title("各年份失业人数分布", fontsize=14)
+plt.xlabel("年份", fontsize=12)
+plt.ylabel("人数", fontsize=12)
+plt.xticks(rotation=45, ha='right')
+plt.tight_layout()
+plt.savefig(f"{plots_dir}/失业人数按年分布.png", dpi=300)
+plt.close()
+
+# 按月分组：
+unemployed_data['失业月份'] = unemployed_data['失业时间'].dt.month
+plt.figure(figsize=(8, 5))
+sns.countplot(x='失业月份', data=unemployed_data, palette='Set2')
+plt.title("各月份失业人数分布", fontsize=14)
+plt.xlabel("月份", fontsize=12)
+plt.ylabel("人数", fontsize=12)
+plt.xticks(rotation=45, ha='right')
+plt.tight_layout()
+plt.savefig(f"{plots_dir}/失业人数按月分布.png", dpi=300)
+plt.close()
+
 data.to_csv("results/cleaned_for_analysis.csv", index=False)
 
 print("✅ 四张分析图已保存到目录: results/plots")
