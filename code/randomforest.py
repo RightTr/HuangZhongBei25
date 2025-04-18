@@ -30,8 +30,6 @@ rf_model.fit(X_train, y_train)
 # 在测试集上进行预测
 y_pred = rf_model.predict(X_test)
 
-print(y_pred)
-
 # 计算评估指标
 accuracy = accuracy_score(y_test, y_pred)
 precision = precision_score(y_test, y_pred)

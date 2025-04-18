@@ -4,16 +4,12 @@ import matplotlib.pyplot as plt
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from statsmodels.tools.tools import add_constant
 
-# 读取标准化后的数据
-df = pd.read_csv('./processed_data/standardized_data.csv')
-
-# 统计就业状态：0为失业，1为就业
-label_counts = df['label'].value_counts()
-print("就业状态分布：\n", label_counts)
-
-# 设置字体支持中文
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
+
+df = pd.read_csv('../processed_data/standardized_data.csv')
+
+label_counts = df['label'].value_counts()
 
 # 相关系数矩阵
 corr_matrix = df.corr(numeric_only=True)

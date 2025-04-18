@@ -85,6 +85,7 @@ print(f"Removed result: {len(df_result)}")
 # Agt2Integer
 df_result['age'] = pd.to_numeric(df_result['age'], errors='coerce')
 
+
 # Standardize
 X = df_result[final_features]
 scaler = StandardScaler()

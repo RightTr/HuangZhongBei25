@@ -4,7 +4,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import precision_score, recall_score, f1_score
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
+from sklearn.metrics import classification_report
 
 class MLP(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
@@ -21,7 +22,7 @@ class MLP(nn.Module):
 
 rf = RandomForestClassifier(n_estimators=100, random_state=42)
 
-data = pd.read_csv('../processed_data/final_processed_data.csv')
+data = pd.read_csv('../processed_data/standardized_data.csv')
 
 X = data.drop(columns=['label'])
 y = data['label']
@@ -30,6 +31,9 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 # Train
 rf.fit(X_train, y_train)
+
+test_preds = rf.predict(X_test)
+print("Test Accuracy:", accuracy_score(y_test, test_preds))
 
 # Get possibility
 train_rf = rf.predict_proba(X_train)
@@ -45,8 +49,8 @@ train_rf_scaled = pd.DataFrame(train_rf_scaled, columns=[f'rf_{i}' for i in rang
 test_rf_scaled = pd.DataFrame(test_rf_scaled, columns=[f'rf_{i}' for i in range(test_rf_scaled.shape[1])])
 
 # cat
-X_train = pd.concat([X_train.reset_index(drop=True), pd.DataFrame(train_rf_scaled)], axis=1)
-X_test = pd.concat([X_test.reset_index(drop=True), pd.DataFrame(test_rf_scaled)], axis=1)
+# X_train = pd.concat([X_train.reset_index(drop=True), pd.DataFrame(train_rf_scaled)], axis=1)
+# X_test = pd.concat([X_test.reset_index(drop=True), pd.DataFrame(test_rf_scaled)], axis=1)
 
 X_train_tensor = torch.tensor(X_train.values, dtype=torch.float32)
 y_train_tensor = torch.tensor(y_train.values, dtype=torch.long)

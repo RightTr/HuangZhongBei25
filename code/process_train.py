@@ -3,6 +3,7 @@ from datetime import datetime
 import os
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import StandardScaler
+from utils import advanced_missing_value_processing
 
 os.makedirs('../processed_data', exist_ok=True)
 
@@ -35,65 +36,25 @@ df.loc[df['c_acc028'].notna(), 'label'] = 1
 # c_aac181: 毕业日期
 # c_aac183: 所学专业名称
 columns_to_keep = [
-    'sex', 'age',
+    'people_id', 'sex', 'age', 'birthday',
     'nation', 'marriage', 'edu_level', 'politic',
     'reg_address', 'profession', 'religion', 'c_aac009',
-    'c_aab299', 'c_aac011',
-    'c_aac180', 'c_aac181', 'c_aac183',
+    'c_aac011', 'c_aac180', 'c_aac181',
     'type', 'label'
 ]
 
 df_result = df[columns_to_keep].copy()
-
-# ## 缺失值处理
-# missing_counts = df_result.isna().sum()
-# # 计算每列缺失值比例
-# missing_ratios = (missing_counts / len(df_result)).round(4)  # 保留4位小数，更直观
-# # 合并成一个DataFrame展示
-# missing_df = pd.DataFrame({
-#     '缺失数量': missing_counts,
-#     '缺失比例': missing_ratios
-# }).sort_values(by='缺失比例', ascending=False)
-# # 打印前几行查看
-# print(missing_df)
-# # 居住状态这一列删除，其它列填充中位数
-# # 2. 填充类别型列的缺失值
-# # 找出所有类别型列（object 类型的列）
-# categorical_columns = df_result.select_dtypes(include=['object']).columns
-# # 对每一列使用众数填充缺失值
-# df_result[categorical_columns] = df_result[categorical_columns].apply(lambda col: col.fillna(col.mode()[0]))
-# # # 打印处理后的缺失值统计
-# print(df_result.head(10))
-
-# 户籍
-le = LabelEncoder()
-df_result['reg_address_encoded'] = le.fit_transform(df_result['reg_address'].astype(str))
-
-# Profession
-df_result['main_profession'] = df_result['profession'].astype(str).str.split(',').str[0]
-df_result['main_profession_encoded'] = le.fit_transform(df_result['main_profession'])
-
-# 户口所在地
-# df_result['c_aab299_户口所在地区（代码）'] = df_result['c_aab299_户口所在地区（代码）'].astype(str)
-# df_result['hukou_province_code'] = df_result['c_aab299_户口所在地区（代码）'].str[:2]
-# df_result['hukou_city_code'] = df_result['c_aab299_户口所在地区（代码）'].str[2:4]
-# df_result['hukou_county_code'] = df_result['c_aab299_户口所在地区（代码）'].str[4:6]
-
-# School
-df_result['school_encoded'] = le.fit_transform(df_result['c_aac180'].astype(str))
 
 # Graduate date
 df_result['c_aac181'] = pd.to_datetime(df_result['c_aac181'], errors='coerce')
 df_result['graduate_year'] = df_result['c_aac181'].dt.year
 df_result['years_since_grad'] = 2025 - df_result['graduate_year']
 
-# Major name
-le_major_name = LabelEncoder()
-df_result['major_name_encoded'] = le_major_name.fit_transform(df_result['c_aac183'].astype(str))
+df_result = advanced_missing_value_processing(df_result)
 
 cat_cols = [
     'sex', 'nation', 'marriage', 'edu_level',
-    'politic', 'religion', 'type']
+    'politic', 'religion', 'type', 'c_aac011']
 
 for col in cat_cols:
     le = LabelEncoder()
@@ -101,9 +62,7 @@ for col in cat_cols:
 
 # Choosed cols
 final_features = [
-    'age', 'years_since_grad',
-    'reg_address_encoded', 'main_profession_encoded', 'school_encoded',
-    'major_name_encoded'] + [col + '_enc' for col in cat_cols]
+    'age', 'years_since_grad'] + [col + '_enc' for col in cat_cols]
 
 # Count duplicate ids
 dup_counts = df_result['people_id'].value_counts()
