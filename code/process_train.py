@@ -172,6 +172,10 @@ print(f"检测到重复人员编号数量：{len(duplicate_ids)}，将全部剔�
 df_result = df_result[~df_result['people_id_人员编号'].isin(duplicate_ids)].reset_index(drop=True)
 print(f"剔除重复后剩余数据量：{len(df_result)}")
 
+# 保存清洗后的原始数据（用于可视化）
+df_result.to_csv('./processed_data/df_result.csv', index=False, encoding='utf-8-sig')
+print("✅ 清洗后的原始数据已保存为 df_result.csv，用于可视化分析")
+
 # ------------------------------
 # 将年龄转为数值型（int）
 df_result['age_年龄'] = pd.to_numeric(df_result['age_年龄'], errors='coerce')
