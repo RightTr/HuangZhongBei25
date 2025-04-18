@@ -2,6 +2,7 @@ import pandas as pd
 from datetime import datetime
 import os
 from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import StandardScaler
 
 os.makedirs('../processed_data', exist_ok=True)
 
@@ -15,9 +16,9 @@ print(df)
 today = pd.to_datetime(datetime.today().date())
 
 date_cols = [
-    'b_acc031',
-    'b_aae031',
-    'c_acc028'
+    'b_acc031', # 就业时间
+    'b_aae031', # 合同终止日期
+    'c_acc028' # 失业注销时间
 ]
 for col in date_cols:
     df[col] = pd.to_datetime(df[col], errors='coerce')
@@ -27,15 +28,19 @@ df.loc[df['c_acc0m3'] == '就业', 'label'] = 1
 df.loc[df['b_acc031'].notna() & (df['b_aae031'].isna() | (df['b_aae031'] > today)),'label'] = 1
 df.loc[df['c_acc028'].notna(), 'label'] = 1
 
+# c_aac009: 户口性质
+# c_aab299: 户口所在地区（代码）
+# c_aac011: 文化程度
+# c_aac180: 毕业学校
+# c_aac181: 毕业日期
+# c_aac183: 所学专业名称
 columns_to_keep = [
-    'people_id', 'name', 'sex', 'birthday', 'age',
+    'sex', 'age',
     'nation', 'marriage', 'edu_level', 'politic',
     'reg_address', 'profession', 'religion', 'c_aac009',
     'c_aab299', 'c_aac011',
     'c_aac180', 'c_aac181', 'c_aac183',
-    'type', 'military_status', 'is_disability',
-    'is_teen', 'is_elder', 'change_type',
-    'is_living_alone', 'label'
+    'type', 'label'
 ]
 
 df_result = df[columns_to_keep].copy()
@@ -59,11 +64,6 @@ df_result = df[columns_to_keep].copy()
 # df_result[categorical_columns] = df_result[categorical_columns].apply(lambda col: col.fillna(col.mode()[0]))
 # # # 打印处理后的缺失值统计
 # print(df_result.head(10))
-
-# Birthday
-df_result['birthday'] = pd.to_datetime(df_result['birthday'], errors='coerce')
-df_result['birth_year'] = df_result['birthday'].dt.year
-df_result['birth_month'] = df_result['birthday'].dt.month
 
 # 户籍
 le = LabelEncoder()
@@ -93,10 +93,7 @@ df_result['major_name_encoded'] = le_major_name.fit_transform(df_result['c_aac18
 
 cat_cols = [
     'sex', 'nation', 'marriage', 'edu_level',
-    'politic', 'religion', 'type', 'military_status',
-    'is_disability', 'is_teen', 'is_elder',
-    'is_living_alone', 'change_type'
-]
+    'politic', 'religion', 'type']
 
 for col in cat_cols:
     le = LabelEncoder()
@@ -104,7 +101,7 @@ for col in cat_cols:
 
 # Choosed cols
 final_features = [
-    'age', 'birth_year', 'birth_month', 'graduate_year', 'years_since_grad',
+    'age', 'years_since_grad',
     'reg_address_encoded', 'main_profession_encoded', 'school_encoded',
     'major_name_encoded'] + [col + '_enc' for col in cat_cols]
 
@@ -127,7 +124,6 @@ df_result['age'] = pd.to_numeric(df_result['age'], errors='coerce')
 df_model = df_result[final_features + ['label']]
 
 # Standardize
-from sklearn.preprocessing import StandardScaler
 X = df_model[final_features]
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
