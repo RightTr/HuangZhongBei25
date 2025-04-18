@@ -45,7 +45,7 @@ print(df[['name_姓名', 'b_acc031_就业时间', 'b_aae031_合同终止日期',
 ## 剔除无关变量
 # 设置保留字段
 columns_to_keep = [
-    'people_id_人员编11号', 'name_姓名', 'sex_性别', 'birthday_生日', 'age_年龄',
+    'people_id_人员编号', 'name_姓名', 'sex_性别', 'birthday_生日', 'age_年龄',
     'nation_民族', 'marriage_婚姻状态', 'edu_level_教育程度', 'politic_政治面貌',
     'reg_address_户籍地址', 'profession_专业', 'religion_宗教信仰', 'c_aac009_户口性质',
     'c_aab299_户口所在地区（代码）', 'c_aac010_户口所在地区（名称）', 'c_aac011_文化程度',
@@ -158,31 +158,52 @@ final_features = [
                      # 刚刚LabelEncode的类别变量
                  ] + [col + '_enc' for col in cat_cols]
 
+# 输出处理后的数据结构
+print(df_result.dtypes)
+
+# ------------------------------
+# 删除所有“人员编号”重复的记录
+# ------------------------------
+dup_counts = df_result['people_id_人员编号'].value_counts()
+duplicate_ids = dup_counts[dup_counts > 1].index
+print(f"检测到重复人员编号数量：{len(duplicate_ids)}，将全部剔除。")
+
+# 去除所有含有重复人员编号的行（一个都不保留）
+df_result = df_result[~df_result['people_id_人员编号'].isin(duplicate_ids)].reset_index(drop=True)
+print(f"剔除重复后剩余数据量：{len(df_result)}")
+
+# ------------------------------
 # 将年龄转为数值型（int）
 df_result['age_年龄'] = pd.to_numeric(df_result['age_年龄'], errors='coerce')
 
-# 取建模用数据子集
+# 构建建模用字段
+final_features = [
+    'age_年龄', 'birth_year', 'birth_month', 'graduate_year', 'years_since_grad',
+    'reg_address_encoded', 'main_profession_encoded', 'school_encoded',
+    'major_code_encoded', 'major_name_encoded',
+] + [col + '_enc' for col in cat_cols]
+
+# 构建模型数据集
 df_model = df_result[final_features + ['label']]
-print(df_model)
+print("用于建模的数据集预览：")
+print(df_model.head())
 
+# ------------------------------
+# 标准化处理
 from sklearn.preprocessing import StandardScaler
-
-# 最终建模用的特征（假设你之前已经保存在 final_features 中）
 X = df_model[final_features]
-
-# 初始化标准化器
 scaler = StandardScaler()
-
-# 拟合并变换
 X_scaled = scaler.fit_transform(X)
 
-# 转换为DataFrame并保留列名
+# 构造成 DataFrame 并加上标签列
 X_scaled_df = pd.DataFrame(X_scaled, columns=final_features)
-
-# 如果需要添加标签（label）列
 X_scaled_df['label'] = df_model['label'].values
 
 # 查看标准化后的结果
+print("标准化后的数据预览：")
 print(X_scaled_df.head())
+
+# ------------------------------
 # 保存为 CSV 文件
 X_scaled_df.to_csv('./processed_data/standardized_data.csv', index=False, encoding='utf-8-sig')
+print("✅ 标准化后的数据已保存为 standardized_data.csv")
