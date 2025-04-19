@@ -17,7 +17,7 @@ else:
     print("❌ 字体未找到，请检查路径！")
 
 # ===== 数据读取与处理 =====
-df = pd.read_csv('processed_data/df_result.csv')
+df = pd.read_csv('../processed_data/df_result.csv')
 
 # 性别映射
 sex_mapping = {0: '未知', 1: '男', 2: '女', 9: '未说明'}
@@ -45,7 +45,7 @@ min_grad_year = df['graduate_year'].min()
 df_filtered = df[df['graduate_year'] > min_grad_year]
 
 # 输出目录
-output_dir = 'figure'
+output_dir = '../figure'
 os.makedirs(output_dir, exist_ok=True)
 
 # 就业率数据准备

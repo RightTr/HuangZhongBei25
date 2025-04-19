@@ -11,11 +11,11 @@ matplotlib.rcParams['font.sans-serif'] = ['Microsoft YaHei']
 matplotlib.rcParams['axes.unicode_minus'] = False
 
 # 创建图像保存目录
-plots_dir = "figure"
+plots_dir = "../figure"
 os.makedirs(plots_dir, exist_ok=True)
 
 # 读取数据
-data_path = "processed_data/standardized_data.csv"
+data_path = "../processed_data/standardized_data.csv"
 try:
     data = pd.read_csv(data_path)
 except FileNotFoundError:
