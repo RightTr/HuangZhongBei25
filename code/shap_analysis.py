@@ -26,11 +26,11 @@ data['是否在职'] = data['label']
 
 # 精选特征（已标准化处理）
 features = [
-    'age_年龄', 'years_since_grad', 'sex_性别_enc',
-    'edu_level_教育程度_enc', 'marriage_婚姻状态_enc',
-    'politic_政治面貌_enc', 'is_disability_是否残疾人_enc',
-    'is_elder_是否老年人_enc', 'is_teen_是否青少年_enc',
-    'is_living_alone_是否独居_enc'
+    'age', 'years_since_grad', 'sex_enc',
+    'edu_level_enc', 'marriage_enc',
+    'politic_enc', 'is_disability_enc',
+    'is_elder_enc', 'is_teen_enc',
+    'is_living_alone_enc'
 ]
 
 X = data[features]
@@ -49,16 +49,16 @@ shap_values = explainer(X_train)
 
 # 中文别名映射
 rename_dict = {
-    'age_年龄': '年龄',
-    'years_since_grad': '毕业年距今',
-    'sex_性别_enc': '性别',
-    'edu_level_教育程度_enc': '教育程度',
-    'marriage_婚姻状态_enc': '婚姻状态',
-    'politic_政治面貌_enc': '政治面貌',
-    'is_disability_是否残疾人_enc': '是否残疾人',
-    'is_elder_是否老年人_enc': '是否老年人',
-    'is_teen_是否青少年_enc': '是否青少年',
-    'is_living_alone_是否独居_enc': '是否独居'
+    'age': '年龄',
+    'years_since_grad': '毕业年至今',
+    'sex_enc': '性别',
+    'edu_level': '教育程度',
+    'marriage_enc': '婚姻状态',
+    'politic_enc': '政治面貌',
+    'is_disability_enc': '是否残疾人',
+    'is_elder_enc': '是否老年人',
+    'is_teen_enc': '是否青少年',
+    'is_living_alone_enc': '是否独居'
 }
 readable_features = [rename_dict.get(f, f) for f in features]
 

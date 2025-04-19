@@ -17,11 +17,11 @@ else:
     print("❌ 字体未找到，请检查路径！")
 
 # ===== 数据读取与处理 =====
-df = pd.read_csv('../processed_data/df_result.csv')
+df = pd.read_csv('../processed_data/non_standardized_data.csv')
 
 # 性别映射
 sex_mapping = {0: '未知', 1: '男', 2: '女', 9: '未说明'}
-df['sex_性别'] = df['sex_性别'].map(sex_mapping).fillna('未知')
+df['sex'] = df['sex'].map(sex_mapping).fillna('未知')
 
 # 教育程度映射
 edu_mapping = {
@@ -38,7 +38,7 @@ edu_mapping = {
     91: '中等师范学校（幼儿师范学校）毕业', 92: '中等师范学校（幼儿师范学校）结业',
     93: '中等师范学校（幼儿师范学校）肄业', 99: '其他'
 }
-df['edu_level_教育程度'] = df['edu_level_教育程度'].map(edu_mapping).fillna('未知')
+df['edu_level'] = df['edu_level'].map(edu_mapping).fillna('未知')
 
 # 毕业年过滤
 min_grad_year = df['graduate_year'].min()
@@ -50,13 +50,13 @@ os.makedirs(output_dir, exist_ok=True)
 
 # 就业率数据准备
 employment_rate_by_grad_year = df_filtered.groupby('graduate_year')['label'].mean()
-employment_rate_by_age = df.groupby('age_年龄')['label'].mean()
+employment_rate_by_age = df.groupby('age')['label'].mean()
 
 # ===== 图表绘制 =====
 
 # 1. 性别与就业状态
 plt.figure(figsize=(10, 6))
-sns.countplot(data=df, x='sex_性别', hue='label', hue_order=[0, 1])
+sns.countplot(data=df, x='sex', hue='label', hue_order=[0, 1])
 plt.title('性别与就业状态的关系', fontsize=16)
 plt.xlabel('性别', fontsize=14)
 plt.ylabel('人数', fontsize=14)
@@ -68,7 +68,7 @@ plt.close()
 
 # 2. 教育程度与就业状态
 plt.figure(figsize=(12, 10))
-sns.countplot(data=df, y='edu_level_教育程度', hue='label', hue_order=[0, 1])
+sns.countplot(data=df, y='edu_level', hue='label', hue_order=[0, 1])
 plt.title('教育程度与就业状态的关系', fontsize=20)
 plt.xlabel('人数', fontsize=14)
 plt.ylabel('教育程度', fontsize=14)
@@ -109,7 +109,7 @@ plt.close()
 
 # 5. 年龄与就业状态箱线图
 plt.figure(figsize=(8, 6))
-sns.boxplot(data=df, x='label', y='age_年龄', hue='label', palette='coolwarm')
+sns.boxplot(data=df, x='label', y='age', hue='label', palette='coolwarm')
 plt.title('年龄与就业状态的箱线图', fontsize=16)
 plt.xlabel('就业状态', fontsize=14)
 plt.ylabel('年龄', fontsize=14)
@@ -120,13 +120,15 @@ plt.savefig(os.path.join(output_dir, 'age_vs_employment_boxplot.png'))
 plt.close()
 
 # 6. 性别与就业状态饼图
-sex_label_counts = df.groupby(['sex_性别', 'label']).size().unstack().fillna(0)
+sex_label_counts = df.groupby(['sex', 'label']).size().unstack().fillna(0)
 fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-labels = ['无业', '已就业']
+labels_dict = {0: '无业', 1: '已就业'}
+
 for i, col in enumerate(sex_label_counts.columns):
     axes[i].pie(sex_label_counts[col], labels=sex_label_counts.index,
                 autopct='%1.1f%%', startangle=140, textprops={'fontsize': 10})
-    axes[i].set_title(f'就业状态：{labels[col]}', fontsize=14)
+    axes[i].set_title(f'就业状态：{labels_dict.get(int(col), str(col))}', fontsize=14)
+
 plt.suptitle('性别与就业状态的分布（饼图）', fontsize=16)
 plt.tight_layout()
 plt.savefig(os.path.join(output_dir, 'sex_vs_employment_pie.png'))
@@ -134,7 +136,7 @@ plt.close()
 
 # 7. 多变量散点图（PairPlot）
 sns.pairplot(df, hue='label',
-             vars=['age_年龄', 'years_since_grad', 'reg_address_encoded', 'main_profession_encoded'],
+             vars=['age', 'years_since_grad', 'reg_address_encoded'],
              hue_order=[0, 1], palette='Set1', diag_kind='kde',
              plot_kws={'alpha': 0.6, 's': 50})
 plt.suptitle('变量与就业状态的关系（PairPlot）', fontsize=16, y=1.02)
