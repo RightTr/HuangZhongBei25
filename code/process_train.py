@@ -1,11 +1,12 @@
 import pandas as pd
+import numpy as np
 from datetime import datetime
 import os
 from sklearn.preprocessing import LabelEncoder
 
 os.makedirs('../processed_data', exist_ok=True)
 
-df_raw = pd.read_csv("../processed_data/raw_data.csv", encoding='utf-8')
+df_raw = pd.read_csv("../processed_data/data.csv", encoding='utf-8')
 
 df = df_raw.iloc[2:].reset_index(drop=True)
 df.replace('\\N', pd.NA, inplace=True)
@@ -30,9 +31,9 @@ df.loc[df['c_acc028'].notna(), 'label'] = 1
 columns_to_keep = [
     'people_id', 'name', 'sex', 'birthday', 'age',
     'nation', 'marriage', 'edu_level', 'politic',
-    'reg_address', 'profession', 'religion', 'c_aac009',
+    'reg_address', 'religion', 'c_aac009',
     'c_aab299', 'c_aac011',
-    'c_aac180', 'c_aac181', 'c_aac183',
+    'c_aac180', 'c_aac181',
     'type', 'military_status', 'is_disability',
     'is_teen', 'is_elder', 'change_type',
     'is_living_alone', 'label'
@@ -40,25 +41,65 @@ columns_to_keep = [
 
 df_result = df[columns_to_keep].copy()
 
-# ## 缺失值处理
-# missing_counts = df_result.isna().sum()
-# # 计算每列缺失值比例
-# missing_ratios = (missing_counts / len(df_result)).round(4)  # 保留4位小数，更直观
-# # 合并成一个DataFrame展示
-# missing_df = pd.DataFrame({
-#     '缺失数量': missing_counts,
-#     '缺失比例': missing_ratios
-# }).sort_values(by='缺失比例', ascending=False)
-# # 打印前几行查看
-# print(missing_df)
-# # 居住状态这一列删除，其它列填充中位数
-# # 2. 填充类别型列的缺失值
-# # 找出所有类别型列（object 类型的列）
-# categorical_columns = df_result.select_dtypes(include=['object']).columns
-# # 对每一列使用众数填充缺失值
-# df_result[categorical_columns] = df_result[categorical_columns].apply(lambda col: col.fillna(col.mode()[0]))
-# # # 打印处理后的缺失值统计
-# print(df_result.head(10))
+def advanced_missing_value_processing(df):
+    # 生成缺失分析报告（建议保留此输出用于验证）
+    missing_analysis = df.isna().agg(['sum', 'mean']).T
+    missing_analysis.columns = ['缺失数量', '缺失比例']
+    missing_analysis = missing_analysis.sort_values(by='缺失比例', ascending=False)
+    print("缺失值分析报告：\n", missing_analysis.head(10))
+
+    # 删除高缺失率特征（阈值设为70%）
+    high_missing_cols = missing_analysis[missing_analysis['缺失比例'] > 0.7].index.tolist()
+    if high_missing_cols:
+        print(f"🚮 删除高缺失率特征：{high_missing_cols}")
+        df = df.drop(columns=high_missing_cols)
+
+    # 毕业年份推算（根据毕业学校类型判断毕业年龄）
+    if 'graduate_school' in df.columns:
+        def infer_grad_year(row):
+            if pd.notnull(row.get('graduate_year')):
+                return row['graduate_year']
+            school = str(row.get('c_aac180', ''))
+            birth_year = row.get('birth_year', None)
+            if pd.isnull(birth_year):
+                return np.nan
+            # 判断学校类型
+            if any(keyword in school for keyword in ['中学', '高中', '职教', '职高', '职工' ,'技校', '一中', '二中']):
+                grad_age = 18
+            elif any(keyword in school for keyword in ['大学', '学院', '学校']):
+                grad_age = 22
+            else:
+                grad_age = 20  # 默认值，适用于无法判断的情况
+            return birth_year + grad_age
+
+        df['graduate_year'] = df.apply(infer_grad_year, axis=1)
+        df['years_since_grad'] = 2025 - df['graduate_year']
+
+    # 分类型与数值型差异处理
+    # 类别型特征处理（添加'Unknown'类别）
+    categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
+    for col in categorical_cols:
+        if col in df.columns:
+            df[col] = df[col].astype('category').cat.add_categories(['Unknown']).fillna('Unknown')
+
+    # 数值型特征处理（MICE算法）
+    numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
+    if numeric_cols:
+        from sklearn.experimental import enable_iterative_imputer
+        from sklearn.impute import IterativeImputer
+
+        imputer = IterativeImputer(
+            max_iter=10,
+            random_state=42,
+            initial_strategy='median'
+        )
+        df[numeric_cols] = imputer.fit_transform(df[numeric_cols])
+
+    # 关键特征验证
+    assert df['age'].isna().sum() == 0, "年龄字段仍存在缺失！"
+    assert df['label'].isna().sum() == 0, "标签字段仍存在缺失！"
+
+    return df
 
 # Birthday
 df_result['birthday'] = pd.to_datetime(df_result['birthday'], errors='coerce')
@@ -70,8 +111,8 @@ le = LabelEncoder()
 df_result['reg_address_encoded'] = le.fit_transform(df_result['reg_address'].astype(str))
 
 # Profession
-df_result['main_profession'] = df_result['profession'].astype(str).str.split(',').str[0]
-df_result['main_profession_encoded'] = le.fit_transform(df_result['main_profession'])
+# df_result['main_profession'] = df_result['profession'].astype(str).str.split(',').str[0]
+# df_result['main_profession_encoded'] = le.fit_transform(df_result['main_profession'])
 
 # 户口所在地
 # df_result['c_aab299_户口所在地区（代码）'] = df_result['c_aab299_户口所在地区（代码）'].astype(str)
@@ -87,9 +128,11 @@ df_result['c_aac181'] = pd.to_datetime(df_result['c_aac181'], errors='coerce')
 df_result['graduate_year'] = df_result['c_aac181'].dt.year
 df_result['years_since_grad'] = 2025 - df_result['graduate_year']
 
+df_result = advanced_missing_value_processing(df_result)
+
 # Major name
-le_major_name = LabelEncoder()
-df_result['major_name_encoded'] = le_major_name.fit_transform(df_result['c_aac183'].astype(str))
+# le_major_name = LabelEncoder()
+# df_result['major_name_encoded'] = le_major_name.fit_transform(df_result['c_aac183'].astype(str))
 
 cat_cols = [
     'sex', 'nation', 'marriage', 'edu_level',
@@ -105,8 +148,8 @@ for col in cat_cols:
 # Choosed cols
 final_features = [
     'age', 'birth_year', 'birth_month', 'graduate_year', 'years_since_grad',
-    'reg_address_encoded', 'main_profession_encoded', 'school_encoded',
-    'major_name_encoded'] + [col + '_enc' for col in cat_cols]
+    'reg_address_encoded', 'school_encoded',
+    ] + [col + '_enc' for col in cat_cols]
 
 # Count duplicate ids
 dup_counts = df_result['people_id'].value_counts()
