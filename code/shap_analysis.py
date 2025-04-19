@@ -28,9 +28,7 @@ data['是否在职'] = data['label']
 features = [
     'age', 'years_since_grad', 'sex_enc',
     'edu_level_enc', 'marriage_enc',
-    'politic_enc', 'is_disability_enc',
-    'is_elder_enc', 'is_teen_enc',
-    'is_living_alone_enc'
+    'politic_enc','c_aac011_enc'
 ]
 
 X = data[features]
@@ -52,13 +50,10 @@ rename_dict = {
     'age': '年龄',
     'years_since_grad': '毕业年至今',
     'sex_enc': '性别',
-    'edu_level': '教育程度',
+    'edu_level_enc': '教育程度',
     'marriage_enc': '婚姻状态',
     'politic_enc': '政治面貌',
-    'is_disability_enc': '是否残疾人',
-    'is_elder_enc': '是否老年人',
-    'is_teen_enc': '是否青少年',
-    'is_living_alone_enc': '是否独居'
+    'c_aac011_enc': '文化程度'
 }
 readable_features = [rename_dict.get(f, f) for f in features]
 

@@ -7,13 +7,22 @@ from datetime import datetime
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from statsmodels.tools.tools import add_constant
 
-
-output_dirs = ['./figure', './processed_data/reports']
-for dir_path in output_dirs:
-    os.makedirs(dir_path, exist_ok=True)
-
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
+
+# 中文名称映射（用于热力图和VIF报告）
+feature_rename_map = {
+    'sex_enc': '性别',
+    'nation_enc': '民族',
+    'marriage_enc': '婚姻状况',
+    'edu_level_enc': '教育程度',
+    'politic_enc': '政治面貌',
+    'religion_enc': '宗教信仰',
+    'c_aac011_enc': '文化程度',
+    'type_enc':'人口类型',
+    'years_since_grad': '毕业年距',
+    'label': '是否就业'
+}
 
 def load_and_validate_data(path):
     try:
@@ -34,13 +43,15 @@ def generate_correlation_heatmap(df):
     # 计算相关系数
     corr_matrix = df.corr(numeric_only=True)
 
+    corr_matrix = corr_matrix.rename(index=feature_rename_map, columns=feature_rename_map)
+
     # 创建mask矩阵
     mask = np.triu(np.ones_like(corr_matrix, dtype=bool), k=1)
 
     plt.figure(figsize=(20, 18))
-    cmap = sns.diverging_palette(240, 10, as_cmap=True)  # 蓝-白渐变
+    cmap = sns.diverging_palette(240, 10, s=80, l=50, as_cmap=True)
 
-    # 绘制热力图
+    # 绘制相关系数矩阵（热力图）
     ax = sns.heatmap(
         corr_matrix.round(2),
         mask=mask,
@@ -167,7 +178,10 @@ if __name__ == "__main__":
 
         vif_report = perform_vif_analysis(df)
 
-        # 标记高VIF特征
+        # 用中文名替换特征列
+        vif_report['特征名称'] = vif_report['特征名称'].replace(feature_rename_map)
+
+        # 标记高VIF特征（保留中文高亮）
         vif_report['特征名称'] = vif_report.apply(
             lambda x: f"<span style='color:red'>{x['特征名称']}</span>"
             if x['VIF值'] > 50 else (
@@ -175,6 +189,7 @@ if __name__ == "__main__":
                 if x['VIF值'] > 10 else x['特征名称']
             ), axis=1
         )
+
         report_data['vif_table'] = vif_report
 
         # 收集质量问题
@@ -190,23 +205,14 @@ if __name__ == "__main__":
 
         # 保存最终数据集
         selected_features = [
-            'birth_month',
-            'reg_address_encoded',
-            'main_profession_encoded',
-            'school_encoded',
-            'major_code_encoded',
-            'major_name_encoded',
-            'sex_性别_enc',
-            'nation_民族_enc',
-            'marriage_婚姻状态_enc',
-            'edu_level_教育程度_enc',
-            'politic_政治面貌_enc',
-            'religion_宗教信仰_enc',
-            'type_人口类型_enc',
-            'military_status_兵役状态_enc',
-            'is_disability_是否残疾人_enc',
-            'is_elder_是否老年人_enc',
-            'is_living_alone_是否独居_enc',
+            'sex_enc',
+            'nation_enc',
+            'marriage_enc',
+            'edu_level_enc',
+            'politic_enc',
+            'religion_enc',
+            'c_aac011_enc',
+            'years_since_grad',
             'label'
         ]
 

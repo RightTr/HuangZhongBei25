@@ -136,7 +136,7 @@ plt.close()
 
 # 7. 多变量散点图（PairPlot）
 sns.pairplot(df, hue='label',
-             vars=['age', 'years_since_grad', 'reg_address_encoded'],
+             vars=['age', 'years_since_grad' ,'sex_enc', 'edu_level_enc'],
              hue_order=[0, 1], palette='Set1', diag_kind='kde',
              plot_kws={'alpha': 0.6, 's': 50})
 plt.suptitle('变量与就业状态的关系（PairPlot）', fontsize=16, y=1.02)

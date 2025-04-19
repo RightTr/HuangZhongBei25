@@ -10,7 +10,7 @@ plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
 
 # 读取预处理后的数据
-df = pd.read_csv('./processed_data/final_processed_data.csv')
+df = pd.read_csv('../processed_data/final_processed_data.csv')
 
 # 目标变量 (label) 和特征 (features)
 X = df.drop(columns=['label'])
