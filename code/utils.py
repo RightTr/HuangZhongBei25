@@ -1,11 +1,10 @@
-import os
 import pandas as pd
+import numpy as np
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
-import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
-
+import re
 
 def load_data(file_path):
     xl = pd.ExcelFile(file_path)
@@ -132,3 +131,38 @@ def advanced_missing_value_processing(df):
     assert df['label'].isna().sum() == 0, "标签字段仍存在缺失！"
 
     return df
+
+import re
+
+# 多对一映射表：每个 key 是目标地区，value 是关键词列表
+address_map_multi = {
+    "远安县": ["远安"],
+    "五峰县": ["五峰"],
+    "恩施": ["恩施"],
+    "长阳县": ["长阳"],
+    "秭归县": ["秭归"],
+    "枝江市": ["白洋", "马家店"],
+    "宜都市": ["宜都"],
+    "宜昌市": ["宜昌", "平云", "夷陵", "城东大道", "发展大道", "黄花", "枝城"],
+    "荆门市": ["荆门"],
+    "武汉市": ["武汉"],
+    "当阳市": ["当阳"],
+    "重庆市": ["重庆"],
+    "黄冈市": ["麻城", "黄冈"]
+}
+
+def extract_city_or_county(address):
+    if pd.isna(address):
+        return address
+    # 多关键词判断
+    for region, keywords in address_map_multi.items():
+        if any(kw in address for kw in keywords):
+            return region
+    # 正则匹配提取
+    match = re.search(r"([^\s]+省)?\s*([^市\s]+市|[^县\s]+县)", address)
+    if match:
+        return match.group(2)
+    match = re.search(r"([^市\s]+市|[^县\s]+县|[^乡\s]+乡|[^镇\s]+镇|[^区\s]+区)", address)
+    if match:
+        return match.group(1)
+    return address

@@ -3,7 +3,7 @@ from datetime import datetime
 import os
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import StandardScaler
-from utils import advanced_missing_value_processing
+from utils import advanced_missing_value_processing, extract_city_or_county
 
 os.makedirs('../processed_data', exist_ok=True)
 
@@ -49,11 +49,17 @@ df_result['birthday'] = pd.to_datetime(df_result['birthday'], errors='coerce')
 df_result['birth_year'] = df_result['birthday'].dt.year
 df_result['birth_month'] = df_result['birthday'].dt.month
 
-# 户籍地址
-df_result['province'] = df_result['reg_address'].str.extract(r'^(.*?省)')
+# 假设 extract_city_or_county 函数已经定义
+df_result['reg_address'] = df_result['reg_address'].apply(extract_city_or_county)
+
+# 继续对 'reg_address' 列进行 LabelEncoding
 from sklearn.preprocessing import LabelEncoder
 le = LabelEncoder()
 df_result['reg_address_encoded'] = le.fit_transform(df_result['reg_address'].astype(str))
+
+# 输出结果以验证
+print(df_result[['reg_address', 'reg_address_encoded']].head())
+
 
 # 提取主专业代码
 df_result['main_profession'] = df_result['profession'].astype(str).str.split(',').str[0]
