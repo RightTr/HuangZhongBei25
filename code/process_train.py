@@ -4,8 +4,10 @@ import os
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import StandardScaler
 from utils import advanced_missing_value_processing
+import joblib 
 
 os.makedirs('../processed_data', exist_ok=True)
+os.makedirs('../models', exist_ok=True)
 
 df_raw = pd.read_csv("../processed_data/data.csv", encoding='utf-8')
 
@@ -54,15 +56,14 @@ df_result = advanced_missing_value_processing(df_result)
 
 cat_cols = [
     'sex', 'nation', 'marriage', 'edu_level',
-    'politic', 'religion', 'type', 'c_aac011']
+    'politic', 'religion', 'c_aac011']
 
 for col in cat_cols:
     le = LabelEncoder()
     df_result[col + '_enc'] = le.fit_transform(df_result[col].astype(str))
 
 # Choosed cols
-final_features = [
-    'age', 'years_since_grad'] + [col + '_enc' for col in cat_cols]
+final_features = ['age', 'years_since_grad'] + [col + '_enc' for col in cat_cols]
 
 # Count duplicate ids
 dup_counts = df_result['people_id'].value_counts()
@@ -86,6 +87,8 @@ df_model = df_result[final_features + ['label']]
 X = df_model[final_features]
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
+joblib.dump(scaler, '../models/scaler.pkl')
+print("Successfully save to scaler.pkl")
 
 X_scaled_df = pd.DataFrame(X_scaled, columns=final_features)
 X_scaled_df['label'] = df_model['label'].values
