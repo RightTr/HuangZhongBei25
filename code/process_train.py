@@ -48,18 +48,26 @@ df_result = advanced_missing_value_processing(df_result)
 df_result['birthday'] = pd.to_datetime(df_result['birthday'], errors='coerce')
 df_result['birth_year'] = df_result['birthday'].dt.year
 df_result['birth_month'] = df_result['birthday'].dt.month
+# 户籍地址
+df_result['reg_address_extracted'] = df_result['reg_address'].apply(extract_city_or_county)
+# 删除无效地址
+unmatched_mask = (
+    (df_result['reg_address_extracted'] == df_result['reg_address']) |
+    (df_result['reg_address'].isnull()) |
+    (df_result['reg_address'].astype(str).str.strip() == "")
+)
 
-# 假设 extract_city_or_county 函数已经定义
-df_result['reg_address'] = df_result['reg_address'].apply(extract_city_or_county)
+print(f"未匹配的地址行数：{unmatched_mask.sum()}")
+
+df_result = df_result[~unmatched_mask].copy()
+df_result['reg_address'] = df_result['reg_address_extracted']
+df_result.drop(columns=['reg_address_extracted'], inplace=True)
+
 
 # 继续对 'reg_address' 列进行 LabelEncoding
 from sklearn.preprocessing import LabelEncoder
 le = LabelEncoder()
 df_result['reg_address_encoded'] = le.fit_transform(df_result['reg_address'].astype(str))
-
-# 输出结果以验证
-print(df_result[['reg_address', 'reg_address_encoded']].head())
-
 
 # 提取主专业代码
 df_result['main_profession'] = df_result['profession'].astype(str).str.split(',').str[0]
