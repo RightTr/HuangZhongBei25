@@ -103,7 +103,9 @@ def extract_city_or_county(address):
     if "长阳土家族自治县" in address:
         address = "长阳土家族自治县"
     if "秭归" in address:
-        address = "秭归"
+        address = "秭归县"
+    if "宜昌高新区" in address:
+        address = "宜昌高新区"
 
     match = re.search(r"湖北省\s*([^市\s]+市|[^县\s]+县)", address)
     if match:
@@ -112,3 +114,4 @@ def extract_city_or_county(address):
     if match:
         return match.group(1)
     return address
+

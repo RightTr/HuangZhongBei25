@@ -1,50 +1,29 @@
 import pandas as pd
 from datetime import datetime
 import os
+import joblib
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import StandardScaler
-from utils import advanced_missing_value_processing, extract_city_or_county
-import joblib 
+from utils import extract_city_or_county, advanced_missing_value_processing
 
 os.makedirs('../processed_data', exist_ok=True)
 
-df_raw = pd.read_csv("../processed_data/data.csv", encoding='utf-8')
+df_raw = pd.read_csv("../processed_data/data_pre.csv", encoding='utf-8')
 
 df = df_raw.iloc[1:].reset_index(drop=True)
 df.replace('\\N', pd.NA, inplace=True)
 
-
-today = pd.to_datetime(datetime.today().date())
-
-date_cols = [
-    'b_acc031', # 就业时间
-    'b_aae031', # 合同终止日期
-    'c_acc028' # 失业注销时间
-]
-for col in date_cols:
-    df[col] = pd.to_datetime(df[col], errors='coerce')
-
-df['label'] = 0
-df.loc[df['c_acc0m3'] == '就业', 'label'] = 1
-df.loc[df['b_acc031'].notna() & (df['b_aae031'].isna() | (df['b_aae031'] > today)),'label'] = 1
-df.loc[df['c_acc028'].notna(), 'label'] = 1
-
-# c_aac009: 户口性质
-# c_aab299: 户口所在地区（代码）
-# c_aac011: 文化程度
-# c_aac180: 毕业学校
-# c_aac181: 毕业日期
-# c_aac183: 所学专业名称
 columns_to_keep = [
     'people_id', 'sex', 'age', 'birthday',
     'nation', 'marriage', 'edu_level', 'politic',
     'reg_address', 'profession', 'religion', 'c_aac009',
     'c_aac011', 'c_aac180', 'c_aac181',
-    'type', 'label']
+    'type']
 
-# 创建高新技术产业增加值数据
+df_result = df[columns_to_keep].copy()
+
 data_high_tech = {
-    '地区名': ['宜昌市', '宜都市', '枝江市', '当阳市', '远安县', '兴山县', '秭归县', '长阳自治县', '五峰自治县', '夷陵区', '西陵区', '伍家岗区', '点军区', '猇亭区', '宜昌高新区'],
+    '地区名': ['宜昌市', '宜都市', '枝江市', '当阳市', '远安县', '兴山县', '秭归县', '长阳自治县', '五峰', '夷陵区', '西陵区', '伍家岗区', '点军区', '猇亭区', '宜昌高新区'],
     '2017.0': [406.41, 61.12, 43.11, 37.07, 55.94, 4.88, 7.07, 7.77, 2.78, 30.42, 83.92, 9.65, 4.83, 34.42, 23.92],
     '2018.0': [472.49, 83.69, 61.24, 55.19, 20.4, 8.11, 10.33, 8.89, 4.12, 44.32, 81.13, 15.57, 9.25, 42.81, 31.27],
     '2019.0': [644.65, 119.25, 85.99, 103.57, 14.22, 9.62, 22.01, 17.2, 5.97, 35.5, 92.26, 25.25, 10.36, 53.14, 51.28],
@@ -53,26 +32,16 @@ data_high_tech = {
     '2022.0': [1253.7, 243.18, 234.26, 111.05, 49.66, 18.97, 22.88, 26.53, 14.5, 104.83, 148.51, 59.03, 12.43, 126.14, 94.55]
 }
 
+df_result['reg_address'] = df_result['reg_address'].apply(extract_city_or_county)
+
 df_high_tech = pd.DataFrame(data_high_tech)
 df_high_tech.set_index('地区名', inplace=True)
 means = df_high_tech.mean(axis=1)
 
-df_result = df[columns_to_keep].copy()
-
-
-# Graduate date
-df_result['c_aac181'] = pd.to_datetime(df_result['c_aac181'], errors='coerce')
-df_result['graduate_year'] = df_result['c_aac181'].dt.year
-df_result = advanced_missing_value_processing(df_result)
-df_result['years_since_grad'] = 2025 - df_result['graduate_year']
-df_result['graduate_year'] = df_result['c_aac181'].dt.year.astype(str)
-
-df_result['reg_address'] = df_result['reg_address'].apply(extract_city_or_county)
-# 只提取汉字
-pattern = r'^[\u4e00-\u9fa5]+$'
-df_result = df_result[~df_result['reg_address'].str.contains('\"')]
-df_result = df_result[df_result['reg_address'].str.match(pattern, na=False)]
-df_result['reg_address'].to_csv('../temp/reg.csv', index=False, encoding='utf-8-sig')
+# Birthday
+df_result['birthday'] = pd.to_datetime(df_result['birthday'], errors='coerce')
+df_result['birth_year'] = df_result['birthday'].dt.year
+df_result['birth_month'] = df_result['birthday'].dt.month
 
 # high_tech
 def get_value(row):
@@ -88,18 +57,27 @@ nan_count = df_result['high_tech'].isna().sum()
 print(f"high_tech 列为 NaN 的行数: {nan_count}")
 
 # 删除 high_tech 列为 NaN 的行
-df_result = df_result.dropna(subset=['high_tech'])
+df_result['high_tech'] = df_result['high_tech'].fillna(0)
+
+# Graduate date
+df_result['c_aac181'] = pd.to_datetime(df_result['c_aac181'], errors='coerce')
+df_result['graduate_year'] = df_result['c_aac181'].dt.year
+df_result['years_since_grad'] = 2025 - df_result['graduate_year']
 
 cat_cols = [
     'sex', 'nation', 'marriage', 'edu_level',
     'politic', 'religion', 'c_aac011', 'reg_address', 'high_tech']
+
+df_result = advanced_missing_value_processing(df_result)
+
 
 for col in cat_cols:
     le = LabelEncoder()
     df_result[col + '_enc'] = le.fit_transform(df_result[col].astype(str))
 
 # Choosed cols
-final_features = ['age', 'years_since_grad'] + [col + '_enc' for col in cat_cols]
+final_features = [
+    'age', 'years_since_grad'] + [col + '_enc' for col in cat_cols]
 
 # Count duplicate ids
 dup_counts = df_result['people_id'].value_counts()
@@ -113,17 +91,13 @@ print(f"Removed result: {len(df_result)}")
 # Agt2Integer
 df_result['age'] = pd.to_numeric(df_result['age'], errors='coerce')
 
-df_model = df_result[final_features + ['label']]
 
 # Standardize
-X = df_model[final_features]
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
-joblib.dump(scaler, '../models/scaler_final.pkl')
-print("Successfully save to scaler_final.pkl")
+scaler = joblib.load('../models/scaler_final.pkl')
+X = df_result[final_features]
+X_scaled = scaler.transform(X)
 
 X_scaled_df = pd.DataFrame(X_scaled, columns=final_features)
-X_scaled_df['label'] = df_model['label'].values
 
-X_scaled_df.to_csv('../processed_data/standardized_data_final.csv', index=False, encoding='utf-8-sig')
-print("Successfully save to standardized_data_final.csv")
+X_scaled_df.to_csv('../processed_data/standardized_data_pre_final.csv', index=False, encoding='utf-8-sig')
+print("Successfully save to standardized_data_pre_final.csv")

@@ -18,7 +18,7 @@ columns_to_keep = [
     'nation', 'marriage', 'edu_level', 'politic',
     'reg_address', 'profession', 'religion', 'c_aac009',
     'c_aac011', 'c_aac180', 'c_aac181',
-    'type', 'label']
+    'type']
 
 df_result = df[columns_to_keep].copy()
 
@@ -40,7 +40,6 @@ cat_cols = [
 df_result = advanced_missing_value_processing(df_result)
 
 df_result['reg_address'] = df_result['reg_address'].apply(extract_city_or_county)
-df_result['reg_address'].to_csv('../temp/reg_pre.csv', index=False, encoding='utf-8-sig')
 
 for col in cat_cols:
     le = LabelEncoder()
@@ -72,3 +71,4 @@ X_scaled_df = pd.DataFrame(X_scaled, columns=final_features)
 
 X_scaled_df.to_csv('../processed_data/standardized_data_pre.csv', index=False, encoding='utf-8-sig')
 print("Successfully save to standardized_data_pre.csv")
+
