@@ -38,11 +38,11 @@ df_result['reg_address_encoded'] = le.fit_transform(df_result['reg_address'].ast
 df_result['main_profession'] = df_result['profession'].astype(str).str.split(',').str[0]
 df_result['main_profession_encoded'] = le.fit_transform(df_result['main_profession'])
 
-# # 户口所在地
-# # df_result['c_aab299_户口所在地区（代码）'] = df_result['c_aab299_户口所在地区（代码）'].astype(str)
-# # df_result['hukou_province_code'] = df_result['c_aab299_户口所在地区（代码）'].str[:2]
-# # df_result['hukou_city_code'] = df_result['c_aab299_户口所在地区（代码）'].str[2:4]
-# # df_result['hukou_county_code'] = df_result['c_aab299_户口所在地区（代码）'].str[4:6]
+# 户口所在地
+df_result['c_aab299_户口所在地区（代码）'] = df_result['c_aab299_户口所在地区（代码）'].astype(str)
+df_result['hukou_province_code'] = df_result['c_aab299_户口所在地区（代码）'].str[:2]
+df_result['hukou_city_code'] = df_result['c_aab299_户口所在地区（代码）'].str[2:4]
+df_result['hukou_county_code'] = df_result['c_aab299_户口所在地区（代码）'].str[4:6]
 
 # School
 df_result['school_encoded'] = le.fit_transform(df_result['c_aac180'].astype(str))

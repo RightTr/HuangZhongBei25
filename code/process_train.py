@@ -29,32 +29,62 @@ df.loc[df['c_acc0m3'] == '就业', 'label'] = 1
 df.loc[df['b_acc031'].notna() & (df['b_aae031'].isna() | (df['b_aae031'] > today)),'label'] = 1
 df.loc[df['c_acc028'].notna(), 'label'] = 1
 
-# c_aac009: 户口性质
-# c_aab299: 户口所在地区（代码）
-# c_aac011: 文化程度
-# c_aac180: 毕业学校
-# c_aac181: 毕业日期
-# c_aac183: 所学专业名称
+
 columns_to_keep = [
     'people_id', 'sex', 'age', 'birthday',
     'nation', 'marriage', 'edu_level', 'politic',
-    'reg_address', 'profession', 'religion', 'c_aac009',
-    'c_aac011', 'c_aac180', 'c_aac181',
+    'reg_address', 'profession', 'religion', 'type',
+    'c_aac009', 'c_aac011', 'c_aac180', 'c_aac181', 'c_aac182', 'c_aac183',
+    'military_status', 'is_disability', 'is_teen', 'is_elder',
     'label'
 ]
 
 df_result = df[columns_to_keep].copy()
 
-# Graduate date
-df_result['c_aac181'] = pd.to_datetime(df_result['c_aac181'], errors='coerce')
-df_result['graduate_year'] = df_result['c_aac181'].dt.year
-df_result['years_since_grad'] = 2025 - df_result['graduate_year']
-
 df_result = advanced_missing_value_processing(df_result)
+
+# 特征转换与派生
+# 生日
+# 将生日列转换为 datetime 类型
+df_result['birthday'] = pd.to_datetime(df_result['birthday'], errors='coerce')
+# 新增出生年份、月份特征
+df_result['birth_year'] = df_result['birthday'].dt.year
+df_result['birth_month'] = df_result['birthday'].dt.month
+
+# 户籍地址
+df_result['province'] = df_result['reg_address'].str.extract(r'^(.*?省)')
+from sklearn.preprocessing import LabelEncoder
+le = LabelEncoder()
+df_result['reg_address_encoded'] = le.fit_transform(df_result['reg_address'].astype(str))
+
+# 提取主专业代码
+df_result['main_profession'] = df_result['profession'].astype(str).str.split(',').str[0]
+# 编码为数字标签
+df_result['main_profession_encoded'] = le.fit_transform(df_result['main_profession'])
+
+# 毕业学校
+df_result['school_encoded'] = le.fit_transform(df_result['c_aac180'].astype(str))
+
+# 专业代码
+from sklearn.preprocessing import LabelEncoder
+le_major_code = LabelEncoder()
+df_result['major_code_encoded'] = le_major_code.fit_transform(df_result['c_aac182'].astype(str))
+
+# 专业名称
+le_major_name = LabelEncoder()
+df_result['major_name_encoded'] = le_major_name.fit_transform(df_result['c_aac183'].astype(str))
+
+# 输出处理后的数据
+print(df_result.dtypes)
+
+# 把其它特征转换成数值型
+from sklearn.preprocessing import LabelEncoder
 
 cat_cols = [
     'sex', 'nation', 'marriage', 'edu_level',
-    'politic', 'religion', 'c_aac011']
+    'politic', 'religion', 'type', 'military_status',
+    'is_disability', 'is_teen', 'is_elder',
+    ]
 
 for col in cat_cols:
     le = LabelEncoder()
@@ -62,7 +92,9 @@ for col in cat_cols:
 
 # Choosed cols
 final_features = [
-    'age', 'years_since_grad'] + [col + '_enc' for col in cat_cols]
+        'age', 'birth_year', 'birth_month', 'years_since_grad',
+        'reg_address_encoded', 'main_profession_encoded', 'school_encoded',
+        'major_code_encoded', 'major_name_encoded',] + [col + '_enc' for col in cat_cols]
 
 # Count duplicate ids
 dup_counts = df_result['people_id'].value_counts()
