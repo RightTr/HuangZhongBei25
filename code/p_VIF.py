@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-import os
 from datetime import datetime
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from statsmodels.tools.tools import add_constant
@@ -10,35 +9,45 @@ from statsmodels.tools.tools import add_constant
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
 
-# 中文名称映射（用于热力图和VIF报告）
 feature_rename_map = {
+    'age': '年龄',
     'sex_enc': '性别',
     'nation_enc': '民族',
+    'birth_month':'出生月份',
+    'birth_year':'出生年份',
     'marriage_enc': '婚姻状况',
     'edu_level_enc': '教育程度',
     'politic_enc': '政治面貌',
     'religion_enc': '宗教信仰',
-    'c_aac011_enc': '文化程度',
+    'cul_level_encoded': '文化程度',
+    'military_status_enc':'兵役状态',
+    'is_disability_enc': '是否残疾',
+    'is_elder_enc':'是否老年',
+    'is_teen_enc': '是否青少年',
     'type_enc':'人口类型',
     'years_since_grad': '毕业年距',
+    'reg_address_encoded': '户籍地址',
+    'main_profession_encoded': '主专业编码',
+    'school_encoded': '毕业学校',
+    'major_code_encoded': '专业代码',
+    'major_name_encoded': '专业名称',
     'label': '是否就业'
 }
 
 def load_and_validate_data(path):
     try:
         df = pd.read_csv(path, encoding='utf-8-sig')
-        print(f"✅ 成功加载数据，维度：{df.shape}")
+        print(f"成功加载数据，维度：{df.shape}")
 
         assert 'label' in df.columns, "数据中缺少必需的label列"
         assert df.shape[0] > 100, "数据量过少（行数<100），请检查数据文件"
 
         return df
     except Exception as e:
-        print(f"❌ 数据加载失败：{str(e)}")
+        print(f" 数据加载失败：{str(e)}")
         raise
 
 
-# ==================== 可视化模块 ====================
 def generate_correlation_heatmap(df):
     # 计算相关系数
     corr_matrix = df.corr(numeric_only=True)
@@ -76,9 +85,8 @@ def generate_correlation_heatmap(df):
     output_path = "../figure/correlation_matrix.jpg"
     plt.savefig(output_path, dpi=600, bbox_inches='tight')
     plt.close()
-    print(f"\n✅ 相关系数矩阵图已保存至：{output_path}")
+    print(f"\n相关系数矩阵图已保存至：{output_path}")
 
-# ==================== VIF分析模块 ====================
 def perform_vif_analysis(df, vif_threshold=10):
     X = df.drop(columns=['label'])
     X_const = add_constant(X)
@@ -89,11 +97,10 @@ def perform_vif_analysis(df, vif_threshold=10):
         try:
             vif = variance_inflation_factor(X_const.values, i)
         except Exception as e:
-            print(f"⚠️ 计算特征 '{feature_name}' 时发生错误：{str(e)}")
+            print(f" 计算特征 '{feature_name}' 时发生错误：{str(e)}")
             vif = np.inf
         vif_results.append(vif)
 
-    # 构建报告
     vif_df = pd.DataFrame({
         '特征名称': X_const.columns,
         'VIF值': vif_results,
@@ -108,14 +115,13 @@ def perform_vif_analysis(df, vif_threshold=10):
     # 筛选建议
     high_vif_features = vif_df[vif_df['VIF值'] > vif_threshold]['特征名称'].tolist()
     if high_vif_features:
-        print("\n⚠️ 高共线性特征建议：")
+        print("\n高共线性特征建议：")
         print(" | ".join(high_vif_features))
 
     return vif_df
 
 def generate_markdown_report(report_data):
     try:
-        # 组装报告内容
         md_content = f"""
 # 数据特征分析报告
 **生成时间**：{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
@@ -159,11 +165,11 @@ def generate_markdown_report(report_data):
         with open(report_path, 'w', encoding='utf-8') as f:
             f.write(md_content)
 
-        print(f"\n✅ Markdown分析报告已生成：{report_path}")
+        print(f"\nMarkdown分析报告已生成：{report_path}")
         return report_path
 
     except Exception as e:
-        print(f"\n❌ 报告生成失败：{str(e)}")
+        print(f"\n报告生成失败：{str(e)}")
         raise
 
 if __name__ == "__main__":
@@ -178,10 +184,8 @@ if __name__ == "__main__":
 
         vif_report = perform_vif_analysis(df)
 
-        # 用中文名替换特征列
         vif_report['特征名称'] = vif_report['特征名称'].replace(feature_rename_map)
 
-        # 标记高VIF特征（保留中文高亮）
         vif_report['特征名称'] = vif_report.apply(
             lambda x: f"<span style='color:red'>{x['特征名称']}</span>"
             if x['VIF值'] > 50 else (
@@ -192,7 +196,6 @@ if __name__ == "__main__":
 
         report_data['vif_table'] = vif_report
 
-        # 收集质量问题
         high_vif = vif_report[vif_report['VIF值'] > 10]
         report_data['high_vif_features'] = high_vif['特征名称'].tolist()
         report_data['quality_issues'] = "- 检测到 {} 个高共线性特征（VIF>10）".format(
@@ -205,23 +208,32 @@ if __name__ == "__main__":
 
         # 保存最终数据集
         selected_features = [
+            'birth_month',
+            'reg_address_encoded',
+            'main_profession_encoded',
+            'school_encoded',
+            'major_code_encoded',
+            'major_name_encoded',
             'sex_enc',
             'nation_enc',
             'marriage_enc',
             'edu_level_enc',
             'politic_enc',
             'religion_enc',
-            'c_aac011_enc',
-            'years_since_grad',
+            'type_enc',
+            'military_status_enc',
+            'is_disability_enc',
+            'is_elder_enc',
+            'is_teen_enc',
             'label'
         ]
 
         output_path = "../processed_data/final_processed_data.csv"
         df[selected_features].to_csv(output_path, index=False, encoding='utf-8-sig')
-        print(f"\n✅ 最终数据集已保存至：{output_path}")
+        print(f"\n最终数据集已保存至：{output_path}")
 
     except Exception as e:
-        print(f"\n❌ 执行过程中发生严重错误：{str(e)}")
+        print(f"\n执行过程中发生严重错误：{str(e)}")
         print("建议检查：")
         print("1. 输入文件路径是否正确")
         print("2. 数据是否包含非数值型列")

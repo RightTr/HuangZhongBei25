@@ -45,9 +45,7 @@ df_result = advanced_missing_value_processing(df_result)
 
 # 特征转换与派生
 # 生日
-# 将生日列转换为 datetime 类型
 df_result['birthday'] = pd.to_datetime(df_result['birthday'], errors='coerce')
-# 新增出生年份、月份特征
 df_result['birth_year'] = df_result['birthday'].dt.year
 df_result['birth_month'] = df_result['birthday'].dt.month
 
@@ -61,7 +59,8 @@ df_result['reg_address_encoded'] = le.fit_transform(df_result['reg_address'].ast
 df_result['main_profession'] = df_result['profession'].astype(str).str.split(',').str[0]
 # 编码为数字标签
 df_result['main_profession_encoded'] = le.fit_transform(df_result['main_profession'])
-
+# 文化程度
+df_result['cul_level_encoded'] = le.fit_transform(df_result['c_aac011'].astype(str))
 # 毕业学校
 df_result['school_encoded'] = le.fit_transform(df_result['c_aac180'].astype(str))
 
@@ -69,15 +68,12 @@ df_result['school_encoded'] = le.fit_transform(df_result['c_aac180'].astype(str)
 from sklearn.preprocessing import LabelEncoder
 le_major_code = LabelEncoder()
 df_result['major_code_encoded'] = le_major_code.fit_transform(df_result['c_aac182'].astype(str))
-
 # 专业名称
 le_major_name = LabelEncoder()
 df_result['major_name_encoded'] = le_major_name.fit_transform(df_result['c_aac183'].astype(str))
 
-# 输出处理后的数据
 print(df_result.dtypes)
 
-# 把其它特征转换成数值型
 from sklearn.preprocessing import LabelEncoder
 
 cat_cols = [
@@ -93,7 +89,7 @@ for col in cat_cols:
 # Choosed cols
 final_features = [
         'age', 'birth_year', 'birth_month', 'years_since_grad',
-        'reg_address_encoded', 'main_profession_encoded', 'school_encoded',
+        'reg_address_encoded', 'main_profession_encoded', 'cul_level_encoded', 'school_encoded',
         'major_code_encoded', 'major_name_encoded',] + [col + '_enc' for col in cat_cols]
 
 # Count duplicate ids

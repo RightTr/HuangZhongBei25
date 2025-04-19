@@ -5,25 +5,21 @@ import matplotlib
 from matplotlib import font_manager
 import os
 
-# 选择合适的字体路径
 font_path = "C:\\Windows\\Fonts\\simsun.ttc"  # 或者使用 SimSun
 
 if os.path.exists(font_path):
     my_font = font_manager.FontProperties(fname=font_path)
     matplotlib.rcParams['font.family'] = my_font.get_name()  # 设置全局字体
     matplotlib.rcParams['axes.unicode_minus'] = False  # 防止负号显示为方框
-    print(f"✅ 已设置中文字体为: {my_font.get_name()}")
+    print(f"已设置中文字体为: {my_font.get_name()}")
 else:
-    print("❌ 字体未找到，请检查路径！")
+    print("字体未找到，请检查路径！")
 
-# ===== 数据读取与处理 =====
 df = pd.read_csv('../processed_data/non_standardized_data.csv')
 
-# 性别映射
 sex_mapping = {0: '未知', 1: '男', 2: '女', 9: '未说明'}
 df['sex'] = df['sex'].map(sex_mapping).fillna('未知')
 
-# 教育程度映射
 edu_mapping = {
     10: '研究生教育', 11: '博士研究生毕业', 12: '博士研究生结业', 13: '博士研究生肄业',
     14: '硕士研究生毕业', 15: '硕士研究生结业', 16: '硕士研究生肄业', 17: '研究生班毕业',
@@ -40,19 +36,15 @@ edu_mapping = {
 }
 df['edu_level'] = df['edu_level'].map(edu_mapping).fillna('未知')
 
-# 毕业年过滤
 min_grad_year = df['graduate_year'].min()
 df_filtered = df[df['graduate_year'] > min_grad_year]
 
-# 输出目录
 output_dir = '../figure'
 os.makedirs(output_dir, exist_ok=True)
 
-# 就业率数据准备
 employment_rate_by_grad_year = df_filtered.groupby('graduate_year')['label'].mean()
 employment_rate_by_age = df.groupby('age')['label'].mean()
 
-# ===== 图表绘制 =====
 
 # 1. 性别与就业状态
 plt.figure(figsize=(10, 6))
@@ -136,11 +128,11 @@ plt.close()
 
 # 7. 多变量散点图（PairPlot）
 sns.pairplot(df, hue='label',
-             vars=['age', 'years_since_grad' ,'sex_enc', 'edu_level_enc'],
+             vars=['age', 'major_name_encoded', 'cul_level_encoded', 'reg_address_encoded'],
              hue_order=[0, 1], palette='Set1', diag_kind='kde',
              plot_kws={'alpha': 0.6, 's': 50})
 plt.suptitle('变量与就业状态的关系（PairPlot）', fontsize=16, y=1.02)
 plt.savefig(os.path.join(output_dir, 'features_vs_employment_pairplot.png'))
 plt.close()
 
-print("✅ 所有图表已保存至 'figure' 文件夹")
+print("所有图表已保存至 'figure' 文件夹")
