@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 import numpy as np
+import re
 
 def load_data(file_path):
     xl = pd.ExcelFile(file_path)
@@ -89,6 +90,25 @@ def advanced_missing_value_processing(df):
 
     # 关键特征验证
     assert df['age'].isna().sum() == 0, "年龄字段仍存在缺失！"
-    assert df['label'].isna().sum() == 0, "标签字段仍存在缺失！"
 
     return df
+
+def extract_city_or_county(address):
+    if "远安" in address:
+        address = "远安"
+    if "五峰" in address:
+        address = "五峰"
+    if "恩施" in address:
+        address = "恩施"
+    if "长阳土家族自治县" in address:
+        address = "长阳土家族自治县"
+    if "秭归" in address:
+        address = "秭归"
+
+    match = re.search(r"湖北省\s*([^市\s]+市|[^县\s]+县)", address)
+    if match:
+        return match.group(1)
+    match = re.search(r"([^市\s]+市|[^县\s]+县)", address)
+    if match:
+        return match.group(1)
+    return address

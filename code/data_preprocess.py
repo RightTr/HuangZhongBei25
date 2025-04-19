@@ -5,8 +5,7 @@ from utils import load_data, load_data_pre
 data = load_data("../raw_data/附件1.xls")
 data_pre = load_data_pre("../raw_data/附件1.xls")
 
-# 不要预测值
-data_pre = data_pre.iloc[:, :-1]
+data_pre = data_pre.rename(columns={data_pre.columns[-1]: 'label'})
 
 key_columns = ['age', 'sex', 'nation', 'edu_level', 'c_aac009']
 data = data.dropna(subset=key_columns, how='any')

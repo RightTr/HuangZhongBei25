@@ -57,18 +57,3 @@ plt.xlabel('重要性')
 plt.ylabel('特征')
 plt.tight_layout()
 plt.savefig("figure/feature_importance.jpg", dpi=500)
-
-
-# 保存训练好的模型
-joblib.dump(rf_model, 'random_forest_model.pkl')
-print(" 模型已保存为 'random_forest_model.pkl'")
-
-## 加载模型直接预测预测集数据
-predict_data = pd.read_csv("./processed_data/predict_scaled_data.csv")
-y_pred = rf_model.predict(predict_data)
-
-# 保存结果
-df_result = predict_data.copy()
-df_result['预测结果'] = y_pred
-df_result.to_csv('./processed_data/predict_result1.csv', index=False, encoding='utf-8-sig')
-print("预测完成，结果保存为 ./processed_data/predict_result.csv")

@@ -3,11 +3,10 @@ from datetime import datetime
 import os
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import StandardScaler
-from utils import advanced_missing_value_processing, extract_city_or_county
+from utils import advanced_missing_value_processing
 import joblib 
 
 os.makedirs('../processed_data', exist_ok=True)
-os.makedirs('../models', exist_ok=True)
 
 df_raw = pd.read_csv("../processed_data/data.csv", encoding='utf-8')
 
@@ -52,18 +51,11 @@ df_result['c_aac181'] = pd.to_datetime(df_result['c_aac181'], errors='coerce')
 df_result['graduate_year'] = df_result['c_aac181'].dt.year
 df_result['years_since_grad'] = 2025 - df_result['graduate_year']
 
-cat_cols = [
-    'sex', 'nation', 'marriage', 'edu_level',
-    'politic', 'religion', 'c_aac011', 'reg_address']
-
 df_result = advanced_missing_value_processing(df_result)
 
-df_result['reg_address'] = df_result['reg_address'].apply(extract_city_or_county)
-# 只提取汉字
-pattern = r'^[\u4e00-\u9fa5]+$'
-df_result = df_result[~df_result['reg_address'].str.contains('\"')]
-df_result = df_result[df_result['reg_address'].str.match(pattern, na=False)]
-df_result['reg_address'].to_csv('../temp/reg.csv', index=False, encoding='utf-8-sig')
+cat_cols = [
+    'sex', 'nation', 'marriage', 'edu_level',
+    'politic', 'religion', 'c_aac011']
 
 for col in cat_cols:
     le = LabelEncoder()
