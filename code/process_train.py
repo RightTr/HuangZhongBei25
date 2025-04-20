@@ -59,10 +59,6 @@ cat_cols = [
 df_result = advanced_missing_value_processing(df_result)
 
 df_result['reg_address'] = df_result['reg_address'].apply(extract_city_or_county)
-# 只提取汉字
-pattern = r'^[\u4e00-\u9fa5]+$'
-df_result = df_result[~df_result['reg_address'].str.contains('\"')]
-df_result = df_result[df_result['reg_address'].str.match(pattern, na=False)]
 df_result['reg_address'].to_csv('../temp/reg.csv', index=False, encoding='utf-8-sig')
 
 for col in cat_cols:

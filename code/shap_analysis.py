@@ -1,68 +1,61 @@
-import pandas as pd
-import numpy as np
-import shap
-import matplotlib.pyplot as plt
 import os
+import pandas as pd
+import matplotlib.pyplot as plt
+import shap
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
 
-# 设置中文字体
 import matplotlib
-matplotlib.rcParams['font.sans-serif'] = ['Microsoft YaHei']  # 设置中文字体为微软雅黑
-matplotlib.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
+matplotlib.rcParams['font.sans-serif'] = ['Microsoft YaHei']
+matplotlib.rcParams['axes.unicode_minus'] = False
 
-# 创建图像保存目录
-plots_dir = "results/plots"
+plots_dir = "../figure"
 os.makedirs(plots_dir, exist_ok=True)
 
-# 读取数据及其处理部分
-data_path = "results/cleaned_for_analysis.csv"
-data = pd.read_csv(data_path)
+data_path = "../processed_data/standardized_data.csv"
+try:
+    data = pd.read_csv(data_path)
+except FileNotFoundError:
+    raise FileNotFoundError(f"❌ 未找到数据文件：{data_path}")
 
-# 构造目标变量
-data['是否在职'] = data['就业状态'].apply(lambda x: 1 if x == '在职' else 0)
+data['是否在职'] = data['label']
 
-# 特征选择
-features = ['性别', '学历', '年龄']
+features = [
+    'age', 'years_since_grad', 'sex_enc', 'nation_enc',
+    'marriage_enc', 'edu_level_enc', 
+    'politic_enc', 'religion_enc', 
+    'reg_address_enc']
+
 X = data[features]
 y = data['是否在职']
 
-# 建立预处理器与模型
-from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.model_selection import train_test_split
+# 划分训练测试集并拟合逻辑回归模型
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+model = LogisticRegression(solver='liblinear')
+model.fit(X_train, y_train)
 
-preprocessor = ColumnTransformer(transformers=[
-    ('cat', OneHotEncoder(drop='first'), ['性别', '学历']),
-    ('num', StandardScaler(), ['年龄'])
-])
+# 生成 SHAP 值
+explainer = shap.Explainer(model, X_train, feature_names=features)
+shap_values = explainer(X_train)
 
-pipeline = Pipeline(steps=[
-    ('preprocessor', preprocessor),
-    ('classifier', LogisticRegression(solver='liblinear'))
-])
+rename_dict = {
+    'age': '年龄',
+    'years_since_grad': '毕业年至今',
+    'sex_enc': '性别',
+    'nation_enc': '民族',
+    'marriage_enc': '婚姻状态',
+    'edu_level_enc': '教育程度',
+    'politic_enc': '政治面貌',
+    'religion_enc': '信仰', 
+    'reg_address_enc': '户籍地址'
+}
+readable_features = [rename_dict.get(f, f) for f in features]
 
-# 划分训练/测试集
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# 拟合模型
-pipeline.fit(X_train, y_train)
-
-# SHAP分析
-onehot = pipeline.named_steps['preprocessor'].named_transformers_['cat']
-cat_features = onehot.get_feature_names_out(['性别', '学历'])
-all_features = np.concatenate([cat_features, ['年龄']])
-
-X_train_transformed = pipeline.named_steps['preprocessor'].transform(X_train)
-
-model = pipeline.named_steps['classifier']
-explainer = shap.Explainer(model, X_train_transformed, feature_names=all_features)
-shap_values = explainer(X_train_transformed)
-
-# 绘图并保存
-shap.summary_plot(shap_values, features=X_train_transformed, feature_names=all_features, show=False)
+shap.summary_plot(shap_values, features=X_train, feature_names=readable_features, show=False)
 plt.tight_layout()
-plt.savefig(f"{plots_dir}/shap_summary_plot.png", dpi=300)
+plt.savefig(os.path.join(plots_dir, "shap_summary_plot_filtered.png"), dpi=300)
 plt.close()
 
-print("✅ SHAP 特征重要性图已保存：results/plots/shap_summary_plot.png")
+print("✅ SHAP 特征重要性图已保存：figure/shap_summary_plot_filtered.png")
