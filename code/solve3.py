@@ -14,7 +14,7 @@ data_pre = pd.read_csv('../processed_data/standardized_data_pre_final.csv')
 X = data.drop(columns=['label'])
 feature_names = X.columns.tolist()
 y = data['label']
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=32)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 dtrain = xgb.DMatrix(X_train, label=y_train)
 dtest = xgb.DMatrix(X_test, label=y_test)
 dpre = xgb.DMatrix(data_pre)
