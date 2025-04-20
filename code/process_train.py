@@ -136,3 +136,8 @@ X_scaled_df['label'] = df_model['label'].values
 
 X_scaled_df.to_csv('../processed_data/standardized_data.csv', index=False, encoding='utf-8-sig')
 print("Successfully save to standardized_data.csv")
+
+employment_counts = df_result['label'].value_counts()
+print("就业状态统计：")
+print(f"已就业人数：{employment_counts.get(1, 0)}")
+print(f"未就业人数：{employment_counts.get(0, 0)}")
