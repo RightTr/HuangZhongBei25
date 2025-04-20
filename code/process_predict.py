@@ -9,7 +9,6 @@ from utils import extract_city_or_county, advanced_missing_value_processing
 os.makedirs('../processed_data', exist_ok=True)
 
 df_raw = pd.read_csv("../processed_data/data_pre.csv", encoding='utf-8')
-
 df = df_raw.iloc[1:].reset_index(drop=True)
 df.replace('\\N', pd.NA, inplace=True)
 
@@ -35,7 +34,7 @@ df_result['years_since_grad'] = 2025 - df_result['graduate_year']
 
 cat_cols = [
     'sex', 'nation', 'marriage', 'edu_level',
-    'politic', 'religion', 'c_aac011', 'reg_address']
+    'politic', 'religion', 'c_aac011', 'reg_address', 'c_aac180']
 
 df_result = advanced_missing_value_processing(df_result)
 
@@ -60,7 +59,6 @@ print(f"Removed result: {len(df_result)}")
 
 # Agt2Integer
 df_result['age'] = pd.to_numeric(df_result['age'], errors='coerce')
-
 
 # Standardize
 scaler = joblib.load('../models/scaler.pkl')

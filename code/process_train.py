@@ -10,11 +10,8 @@ os.makedirs('../processed_data', exist_ok=True)
 os.makedirs('../models', exist_ok=True)
 
 df_raw = pd.read_csv("../processed_data/data.csv", encoding='utf-8')
-
-df = df_raw.iloc[2:].reset_index(drop=True)
+df = df_raw.iloc[1:].reset_index(drop=True)
 df.replace('\\N', pd.NA, inplace=True)
-
-print(df)
 
 today = pd.to_datetime(datetime.today().date())
 
@@ -41,7 +38,7 @@ columns_to_keep = [
     'people_id', 'sex', 'age', 'birthday',
     'nation', 'marriage', 'edu_level', 'politic',
     'reg_address', 'profession', 'religion', 'c_aac009',
-    'c_aac011', 'c_aac180', 'c_aac181',
+    'c_aac011', 'c_aac180', 'c_aac181', 
     'type', 'label'
 ]
 
@@ -54,7 +51,7 @@ df_result['years_since_grad'] = 2025 - df_result['graduate_year']
 
 cat_cols = [
     'sex', 'nation', 'marriage', 'edu_level',
-    'politic', 'religion', 'c_aac011', 'reg_address']
+    'politic', 'religion', 'c_aac011', 'reg_address', 'c_aac180']
 
 df_result = advanced_missing_value_processing(df_result)
 
