@@ -3,6 +3,11 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import precision_score, recall_score, f1_score
 import xgboost as xgb
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei']  # 或者使用SimHei等字体
+plt.rcParams['axes.unicode_minus'] = False  # 防止负号显示为乱码
 
 data = pd.read_csv('../processed_data/standardized_data_final.csv')
 data_pre = pd.read_csv('../processed_data/standardized_data_pre_final.csv')
@@ -49,4 +54,11 @@ print(f"XGBoost 模型 - 准确率: {accuracy_xgb}")
 print(f"XGBoost 模型 - 查准率: {precision_xgb}")
 print(f"XGBoost 模型 - 召回率: {recall_xgb}")
 print(f"XGBoost 模型 - F1 分数: {f1_xgb}")
-print(mypre_binary)
+
+plt.figure(figsize=(12, 7))
+sns.barplot(x='importance_norm', y='feature', data=importance_df_xgb, color='royalblue')
+plt.xlabel('归一化的重要性', fontsize=16)
+plt.ylabel('特征', fontsize=16)
+plt.title('XGBoost 特征重要性 (按权重)', fontsize=18, fontweight='bold')
+plt.grid(True, axis='x', linestyle='--', alpha=0.6)  # 添加网格线
+plt.show()

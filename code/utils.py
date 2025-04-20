@@ -37,6 +37,22 @@ def load_data_pre(file_path):
 
     return data
 
+def load_jobs_code(file_path):
+    xl = pd.ExcelFile(file_path)
+
+    for i in range(10):
+        temp_df = xl.parse(sheet_name='行业代码', header=i)
+        if '行业代码' in temp_df.columns:
+            header_row = i
+            break
+    else:
+        raise ValueError("Error")
+
+    data = xl.parse(sheet_name='行业代码', header=header_row)
+    print(data.columns.tolist())
+
+    return data
+
 def advanced_missing_value_processing(df):
     missing_analysis = df.isna().agg(['sum', 'mean']).T
     missing_analysis.columns = ['缺失数量', '缺失比例']

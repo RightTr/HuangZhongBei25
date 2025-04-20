@@ -1,9 +1,10 @@
 import os
 import pandas as pd
-from utils import load_data, load_data_pre
+from utils import load_data, load_data_pre, load_jobs_code
 
 data = load_data("../raw_data/附件1.xls")
 data_pre = load_data_pre("../raw_data/附件1.xls")
+job_code = load_jobs_code("../raw_data/附件1.xls")
 
 data_pre = data_pre.rename(columns={data_pre.columns[-1]: 'label'})
 
@@ -18,6 +19,8 @@ os.makedirs("../processed_data", exist_ok=True)
 
 data.to_csv(os.path.join("../processed_data/data.csv"), index=False)
 data_pre.to_csv(os.path.join("../processed_data/data_pre.csv"), index=False)
+job_code.to_csv(os.path.join("../processed_data/job_code.csv"), index=False)
 
 print("Successfully Save to data.csv")
 print("Successfully Save to data_pre.csv")
+print("Successfully Save to job_code.csv")
