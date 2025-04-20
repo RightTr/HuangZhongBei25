@@ -3,7 +3,7 @@ from datetime import datetime
 import os
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import StandardScaler
-from utils import advanced_missing_value_processing, extract_city_or_county
+from utils import advanced_missing_value_processing, extract_city_or_county, extract_school_type
 
 os.makedirs('../processed_data', exist_ok=True)
 
@@ -75,6 +75,8 @@ df_result['main_profession'] = df_result['profession'].astype(str).str.split(','
 df_result['main_profession_encoded'] = le.fit_transform(df_result['main_profession'])
 # 文化程度
 df_result['cul_level_encoded'] = le.fit_transform(df_result['c_aac011'].astype(str))
+# 学校类型
+df_result['c_aac180'] = df_result['c_aac180'].apply(extract_school_type)
 # 毕业学校
 df_result['school_encoded'] = le.fit_transform(df_result['c_aac180'].astype(str))
 
