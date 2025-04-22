@@ -45,10 +45,10 @@ df = df.drop(columns=['b_aab022'])
 
 df_filtered = df[df['label'] == 0]
 
-df_resume = df_filtered[["c_aac180", "c_aac183", "b_aab004", "job_name"]].copy()
+df_resume = df_filtered[["id", "c_aac180", "c_aac183", "b_aab004", "job_name"]].copy()
 df_resume = df_resume.copy()
 df_resume.loc[:, '简历文本'] = df_resume.fillna('').astype(str).agg(' '.join, axis=1)
-df_resume = df_resume[["c_aac183", "c_aac180", "b_aab004", "job_name", "简历文本"]]
+df_resume = df_resume[["id", "c_aac183", "c_aac180", "b_aab004", "job_name", "简历文本"]]
 
 new_column_names = {
     "c_aac183": "所学专业名称",
